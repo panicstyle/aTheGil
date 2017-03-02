@@ -367,7 +367,7 @@ public class ArticleViewActivity extends AppCompatActivity implements Runnable {
         // http://cafe.gongdong.or.kr/cafe.php?sort=45&sub_sort=&page=&startpage=&keyfield=&key_bs=&p1=menbal&p2=&p3=&number=1280159&mode=view
 		String url = "http://cafe.gongdong.or.kr/cafe.php?sort=" + m_strBoardId + "&sub_sort=&page=&startpage=&keyfield=&key_bs=&p1="
                 + m_strCommId + "&p2=&p3=&number=" + m_strBoardNo + "&mode=view";
-        String result = m_app.m_httpRequest.requestGet(url, url, "utf-8");
+        String result = m_app.m_httpRequest.requestGet(url, url);
 
         Log.d(TAG, "result : " + result);
 
@@ -450,7 +450,7 @@ public class ArticleViewActivity extends AppCompatActivity implements Runnable {
 //        String url = m_strLink;
 //        http://www.gongdong.or.kr/notice/343365
         String url = "http://www.gongdong.or.kr/notice/" + m_strBoardNo;
-        String result = m_app.m_httpRequest.requestGet(url, "", "utf-8");
+        String result = m_app.m_httpRequest.requestGet(url, "");
 
         if (result.length() < 200
                 || result.indexOf("window.alert(\"권한이 없습니다") >= 0
@@ -643,7 +643,7 @@ public class ArticleViewActivity extends AppCompatActivity implements Runnable {
         nameValuePairs.add(new BasicNameValuePair("number", m_strBoardNo));
         nameValuePairs.add(new BasicNameValuePair("passwd", ""));
 
-		String result = m_app.m_httpRequest.requestPost(url, nameValuePairs, url, "utf-8");
+		String result = m_app.m_httpRequest.requestPost(url, nameValuePairs, url);
 
         m_bDeleteStatus = true;
         if (!result.contains("<meta http-equiv=\"refresh\" content=\"0;url=/cafe.php?sort=")) {
@@ -745,7 +745,7 @@ public class ArticleViewActivity extends AppCompatActivity implements Runnable {
         ArrayList<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
         nameValuePairs.add(new BasicNameValuePair("number", m_strCommentNo));
 
-		String result  = m_app.m_httpRequest.requestPost(url, nameValuePairs, url, "utf-8");
+		String result  = m_app.m_httpRequest.requestPost(url, nameValuePairs, url);
 
         m_bDeleteStatus = true;
         if (!result.contains("<meta http-equiv=\"refresh\" content=\"0;url=/cafe.php?sort=")) {
@@ -770,7 +770,7 @@ public class ArticleViewActivity extends AppCompatActivity implements Runnable {
                 "</params>\n" +
                 "</methodCall>";
         String strReferer = "http://www.gongdong.or.kr/index.php?mid=notice&document_srl=" + m_strBoardNo + "&act=dispBoardDeleteComment&comment_srl=" + m_strCommentNo;
-        String result  = m_app.m_httpRequest.requestPost(url, strPostParam, strReferer, "utf-8");
+        String result  = m_app.m_httpRequest.requestPost(url, strPostParam, strReferer);
 
         m_bDeleteStatus = true;
         if (!result.contains("<error>0</error>")) {

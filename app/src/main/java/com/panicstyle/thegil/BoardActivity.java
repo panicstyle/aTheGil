@@ -174,7 +174,7 @@ public class BoardActivity extends AppCompatActivity implements Runnable {
     protected boolean getData() {
 		
 		String url = "http://cafe.gongdong.or.kr/cafe.php?code=" + m_strCommId;
-		String result = m_app.m_httpRequest.requestGet(url, "", "utf-8");
+		String result = m_app.m_httpRequest.requestGet(url, "");
 
         // 각 항목 찾기
         HashMap<String, Object> item;

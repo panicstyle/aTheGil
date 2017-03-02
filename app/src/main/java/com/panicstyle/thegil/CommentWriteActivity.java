@@ -147,7 +147,7 @@ public class CommentWriteActivity extends AppCompatActivity implements Runnable 
             nameValuePairs.add(new BasicNameValuePair("number_re", m_strCommentNo));
         }
         nameValuePairs.add(new BasicNameValuePair("content", m_strComment));
-		String result = m_app.m_httpRequest.requestPost(url, nameValuePairs, url, "utf-8");
+		String result = m_app.m_httpRequest.requestPost(url, nameValuePairs, url);
 
         if (!result.contains("<meta http-equiv=\"refresh\" content=\"0;url=/cafe.php?sort=")) {
             m_ErrorMsg = Utils.getMatcherFirstString("(?<=window.alert\\(\\\")(.|\\n)*?(?=\\\")", result);
@@ -164,7 +164,7 @@ public class CommentWriteActivity extends AppCompatActivity implements Runnable 
         ArrayList<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
         nameValuePairs.add(new BasicNameValuePair("number", m_strCommentNo));
         nameValuePairs.add(new BasicNameValuePair("content", m_strComment));
-        String result = m_app.m_httpRequest.requestPost(url, nameValuePairs, url, "utf-8");
+        String result = m_app.m_httpRequest.requestPost(url, nameValuePairs, url);
 
         if (!result.contains("<meta http-equiv=\"refresh\" content=\"0;url=/cafe.php?sort=")) {
             m_ErrorMsg = Utils.getMatcherFirstString("(?<=window.alert\\(\\\")(.|\\n)*?(?=\\\")", result);
@@ -194,7 +194,7 @@ public class CommentWriteActivity extends AppCompatActivity implements Runnable 
                 "</methodCall>";
 
         String strReferer = "http://www.gongdong.or.kr/notice/" + m_strBoardNo;
-        String result = m_app.m_httpRequest.requestPost(url, strPostParam, strReferer, "utf-8");
+        String result = m_app.m_httpRequest.requestPost(url, strPostParam, strReferer);
 
         if (!result.contains("<error>0</error>")) {
             m_ErrorMsg = Utils.getMatcherFirstString("(?<=<message>)(.|\\n)*?(?=</message>)", result);
@@ -226,7 +226,7 @@ public class CommentWriteActivity extends AppCompatActivity implements Runnable 
                 "</methodCall>";
         String strReferer = "http://www.gongdong.or.kr/index.php?mid=notice&document_srl=" + m_strBoardNo
                 + "&act=dispBoardModifyComment&comment_srl=" + m_strCommentNo;
-        String result = m_app.m_httpRequest.requestPost(url, strPostParam, strReferer, "utf-8");
+        String result = m_app.m_httpRequest.requestPost(url, strPostParam, strReferer);
 
         if (!result.contains("<error>0</error>")) {
             m_ErrorMsg = Utils.getMatcherFirstString("(?<=<message>)(.|\\n)*?(?=</message>)", result);

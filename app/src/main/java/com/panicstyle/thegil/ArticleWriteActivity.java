@@ -209,7 +209,7 @@ public class ArticleWriteActivity extends AppCompatActivity implements Runnable 
                 }
             }
             entity = builder.build();
-            String result = m_app.m_httpRequest.requestPostWithAttach(url, entity, "", "utf-8", boundary);
+            String result = m_app.m_httpRequest.requestPostWithAttach(url, entity, "",  boundary);
 
             if (!result.contains("<meta http-equiv=\"refresh\" content=\"0;url=/cafe.php?sort=")) {
                 m_ErrorMsg = Utils.getMatcherFirstString("(?<=window.alert\\(\\\")(.|\\n)*?(?=\\\")", result);

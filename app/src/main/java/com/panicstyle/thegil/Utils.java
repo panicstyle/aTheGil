@@ -45,17 +45,26 @@ public class Utils {
         strDest=strDest.replaceAll("<br>","\n");
         strDest=strDest.replaceAll("<br/>","\n");
         strDest=strDest.replaceAll("<br />","\n");
+        strDest=strDest.replaceAll("(<b>\\[)\\d+(\\]</b>)", "");
+        strDest=strDest.replaceAll("(<!--)(.|\\n)*?(-->)", "");
+        strDest=strDest.replaceAll("(<)(.|\\n)*?(>)","");
+
         strDest=strDest.replaceAll("&nbsp;"," ");
         strDest=strDest.replaceAll("&lt;","<");
         strDest=strDest.replaceAll("&gt;",">");
         strDest=strDest.replaceAll("&amp;","&");
         strDest=strDest.replaceAll("&quot;","\"");
         strDest=strDest.replaceAll("&apos;","'");
-        strDest=strDest.replaceAll("(<b>\\[)\\d+(\\]</b>)", "");
-        strDest=strDest.replaceAll("(<!--)(.|\\n)*?(-->)", "");
-        strDest=strDest.replaceAll("(<)(.|\\n)*?(>)","");
 
         strDest=strDest.trim();
+
+        return strDest;
+    }
+
+    public static String removeSpan(String strSrc) {
+        String strDest = strSrc;
+        strDest = strDest.replaceAll("(<span)(.|\\n)*?(</span>)", "");
+        strDest = strDest.trim();
 
         return strDest;
     }

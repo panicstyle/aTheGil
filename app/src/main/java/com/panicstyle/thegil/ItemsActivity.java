@@ -244,29 +244,9 @@ public class ItemsActivity extends AppCompatActivity implements Runnable {
 					Intent intent = new Intent(ItemsActivity.this, ArticleViewActivity.class);
 
 					if (m_nMode == 1) {
-						intent.putExtra("isPNotice", (Integer) item.get("isPNotice"));
-						intent.putExtra("isNotice", (Integer) item.get("isNotice"));
-						intent.putExtra("mode", (Integer) m_nMode);
-						intent.putExtra("boardTitle", (String) item.get("subject"));
-						intent.putExtra("date", (String) item.get("date"));
-						intent.putExtra("userName", (String) item.get("name"));
-						intent.putExtra("userId", (String) item.get("id"));
-//						intent.putExtra("LINK", (String) item.get("link"));
-						intent.putExtra("hit", (String) item.get("hit"));
-						intent.putExtra("commId", (String) item.get("commId"));
 						intent.putExtra("boardId", (String) item.get("boardId"));
 						intent.putExtra("boardNo", (String) item.get("boardNo"));
 					} else {
-						intent.putExtra("isPNotice", 0);
-						intent.putExtra("isNotice", 0);
-						intent.putExtra("mode", (Integer) m_nMode);
-						intent.putExtra("boardTitle", (String) item.get("subject"));
-						intent.putExtra("date", "");
-						intent.putExtra("userName", (String) item.get("name"));
-						intent.putExtra("userId", "");
-//						intent.putExtra("LINK", (String) item.get("link"));
-						intent.putExtra("hit", (String) item.get("hit"));
-						intent.putExtra("commId", (String) item.get("commId"));
 						intent.putExtra("boardId", (String) item.get("boardId"));
 						intent.putExtra("boardNo", (String) item.get("boardNo"));
 					}
@@ -359,130 +339,86 @@ public class ItemsActivity extends AppCompatActivity implements Runnable {
 		Bundle extras = getIntent().getExtras();
 		// 가져온 값을 set해주는 부분
 
-		m_strCommId = extras.getString("commId");
 		m_strBoardId = extras.getString("boardId");
 		m_strBoardName = extras.getString("boardName");
-//		m_itemsLink = extras.getString("ITEMS_LINK");
-
-//		m_CommID = Utils.getMatcherFirstString("(?<=p1=)(.|\\n)*?(?=&)", m_itemsLink);
-//		m_BoardID = Utils.getMatcherFirstString("(?<=sort=)(.|\\n)*?(?=$)", m_itemsLink);
 	}
 
     protected boolean getData() {
 		String Page = Integer.toString(m_nPage);
-//		http://cafe.gongdong.or.kr/cafe.php?p1=menbal&sort=35
-		String url = "http://cafe.gongdong.or.kr/cafe.php?p1=" + m_strCommId + "&sort=" + m_strBoardId + "&page=" + Page;
-        String result = m_app.m_httpRequest.requestGet(url, "", "utf-8");
+		String url = GlobalConst.WWW_SERVER + "/2014/bbs/board.php?bo_table=" + m_strBoardId + "&page=" + Page;
+        String result = m_app.m_httpRequest.requestGet(url, "");
 
         if (result.length() < 200) {
         	return false;
         }
 
 		// 소스에서 <div align="center">제목</div> 가 있으면 일반 게시판, 없으면 사진첩으로 처리
-		if (result.indexOf("<div align=\"center\">제목</div>") > 0) {
-			m_nMode = 1;
-			return getDataNormalMode(result);
-		} else {
+		if (result.indexOf("<ul id=\"gall_ul\">") > 0) {
 			m_nMode = 2;
 			return getDataPictureMode(result);
+		} else {
+			m_nMode = 1;
+			return getDataNormalMode(result);
 		}
 	}
 
 	protected boolean getDataNormalMode(String result) {
         // 각 항목 찾기
+		String tbody = Utils.getMatcherFirstString("(<tbody>)(.|\\n)*?(</tbody>)", result);
+
         HashMap<String, Object> item;
 
-		Matcher m = Utils.getMatcher("(id=\\\"board_list_line\\\")(.|\\n)*?(<td bgcolor=\"#f5f5f5\" colspan=\"7\" height=1></td>)", result);
+		Matcher m = Utils.getMatcher("(<tr>)(.|\\n)*?(</tr>)", tbody);
         while (m.find()) { // Find each match in turn; String can't do this.
             item = new HashMap<String, Object>();
             String matchstr = m.group(0);
-            int isNoti = 0;
 
             // find [공지]
-            if (matchstr.contains("[법인공지]")) {
-                item.put("isPNotice", 1);
-                isNoti = 2;
-            } else {
-            	item.put("isPNotice", 0);
-            }
-
-            // find [공지]
-            if (matchstr.contains("[공지]")) {
+            if (matchstr.contains("class=\"bo_notice\"")) {
                 item.put("isNotice", 1);
-                isNoti = 1;
             } else {
             	item.put("isNotice", 0);
             }
 
             // subject
 	        String strSubject;
-			strSubject = Utils.getMatcherFirstString("(<div align=\\\"left)(.|\\n)*?(</div>)", matchstr);
+			strSubject = Utils.getMatcherFirstString("(<a href=)(.|\\n)*?(</a>)", matchstr);
 			strSubject = Utils.repalceHtmlSymbol(strSubject);
             item.put("subject", strSubject);
 
-	        // link
-			String strLink = Utils.getMatcherFirstString("(?<=<a href=\\\")(.|\\n)*?(?=\\\")", matchstr);
-			if (isNoti == 2) {
-				String boardNo = Utils.getMatcherFirstString("(?<=/notice/)(.|\\n)*?(?=$)", strLink);
-				item.put("commId", "");
-				item.put("boardId", "");
-				item.put("boardNo", boardNo);
-			} else {
-				String commId = Utils.getMatcherFirstString("(?<=p1=)(.|\\n)*?(?=&)", strLink);
-				String boardId = Utils.getMatcherFirstString("(?<=sort=)(.|\\n)*?(?=&)", strLink);
-				String boardNo = Utils.getMatcherFirstString("(?<=number=)(.|\\n)*?(?=&)", strLink);
-				item.put("commId", commId);
-				item.put("boardId", boardId);
-				item.put("boardNo", boardNo);
-			}
+	        // boardNo
+			String strBoardNo = Utils.getMatcherFirstString("(?<=<wr_id=)(.|\\n)*?(?=&amp)", matchstr);
+			item.put("boardNo", strBoardNo);
 
 	        // comment
-			String strComment = Utils.getMatcherFirstString("(?<=<font face=\\\"Tahoma\\\"><b>\\[)(.|\\n)*?(?=\\]</b></font>)", matchstr);
+			String strComment = Utils.getMatcherFirstString("(?<=<span class=\\\"cnt_cmt\\\">)(.|\\n)*?(?=</span>)", matchstr);
             item.put("comment", strComment);
 
             // isNew
-            if (matchstr.contains("img src=images/new_s.gif")) {
+            if (matchstr.contains("icon_new.gif")) {
                 item.put("isNew", 1);
             } else {
             	item.put("isNew", 0);
             }
 
             // isReply
-            if (matchstr.contains("<IMG SRC=\"images/reply.gif")) {
+            if (matchstr.contains("icon_reply.gif")) {
                 item.put("isReply", 1);
             } else {
             	item.put("isReply", 0);
             }
 
-            if (isNoti == 1) {
-            	item.put("name", "[공지]");
-            	item.put("id", "[공지]");
-            } else if (isNoti == 2) {
-            	item.put("name", "[법인공지]");
-            	item.put("id", "[법인공지]");
-            } else {
-		        // name
-				String strName = Utils.getMatcherFirstString("(<!-- 사용자 이름 표시 부분-->)(.|\\n)*?(</div>)", matchstr);
-		        strName = strName.replaceAll("<((.|\\n)*?)+>", "");
-		        strName = strName.trim();
-	            item.put("name", strName);
-
-		        // id
-				String strID = Utils.getMatcherFirstString("(?<=javascript:ui\\(')(.|\\n)*?(?=')", matchstr);
-	            item.put("id", strID);
-            }
+			// name
+			String strName = Utils.getMatcherFirstString("(<td class=\\\"td_name sv_use\\\">)(.|\\n)*?(</td>)", matchstr);
+			strName = Utils.repalceHtmlSymbol(strName);
+			item.put("name", strName);
 
 	        // date
-			String strDate = Utils.getMatcherFirstString("(<div align=\\\"center\\\"><span style=\\\"font-size:8pt;\\\"><font)(.|\\n)*?(</div>)", matchstr);
-			strDate = strDate.replaceAll("<((.|\\n)*?)+>", "");
-			strDate = strDate.trim();
+			String strDate = Utils.getMatcherFirstString("(?<=<td class=\\\"td_date\\\">)(.|\\n)*?(?=</td>)", matchstr);
             item.put("date", strDate);
 
 			// 조회수
-			String strHit = Utils.getMatcherFirstString("(<div align=\\\"right\\\"><span style=\\\"font-size:8pt;\\\"><font face=\\\"Tahoma\\\">)(.|\\n)*?(&nbsp;)", matchstr);
-			strHit = strHit.replaceAll("<((.|\\n)*?)+>", "");
-			strHit = strHit.replaceAll("&nbsp;", "");
-			strHit = strHit.trim();
+			String strHit = Utils.getMatcherFirstString("(?<=<td class=\\\"td_num\\\">)(.|\\n)*?(?=</td>)", matchstr);
 			item.put("hit", strHit);
 
             m_arrayItems.add( item );
@@ -492,55 +428,49 @@ public class ItemsActivity extends AppCompatActivity implements Runnable {
     }
 
 	protected boolean getDataPictureMode(String result) {
+		String tbody = Utils.getMatcherFirstString("(<form name=\\\"fboardlist)(.|\\n)*?(</form>)", result);
+
 		// 각 항목 찾기
 		HashMap<String, Object> item;
 
-		String[] items = result.split("td width=\"25%\" valign=top>\n");
+		String[] items = tbody.split("<li class=\"gall_li");
 		int i = 0;
 		for (i = 1; i < items.length; i++) { // Find each match in turn; String can't do this.
 			item = new HashMap<>();
 			String matchstr = items[i];
 
+			item.put("isNotice", 0);
+			item.put("isRe", 0);
+
 			// subject
-			String strSubject = Utils.getMatcherFirstString("(<span style=\\\"font-size:9pt;\\\">)(.|\\n)*?(</span>)", matchstr);
+			String strSubject = Utils.getMatcherFirstString("(<li class=\\\"gall_text_href)(.|\\n)*?(</li>)", matchstr);
 			strSubject = Utils.repalceHtmlSymbol(strSubject);
+			strSubject = Utils.removeSpan(strSubject);
 			item.put("subject", strSubject);
 
-			// link
-//			String strLink = Utils.getMatcherFirstString("(?<=<a href=\\\")(.|\\n)*?(?=\\\")", matchstr);
-//			item.put("link", strLink);
-			String strLink = Utils.getMatcherFirstString("(?<=<a href=\\\")(.|\\n)*?(?=\\\")", matchstr);
-			String commId = Utils.getMatcherFirstString("(?<=p1=)(.|\\n)*?(?=&)", strLink);
-			String boardId = Utils.getMatcherFirstString("(?<=sort=)(.|\\n)*?(?=&)", strLink);
-			String boardNo = Utils.getMatcherFirstString("(?<=number=)(.|\\n)*?(?=&)", strLink);
-
-			item.put("commId", commId);
-			item.put("boardId", boardId);
+			// boardNo
+			String boardNo = Utils.getMatcherFirstString("(?<=wr_id=)(.|\\n)*?(?=&amp)", matchstr);
 			item.put("boardNo", boardNo);
 
 			// comment
-			String strComment = Utils.getMatcherFirstString("(?<=<b>\\[)(.|\\n)*?(?=\\]</b>)", matchstr);
+			String strComment = Utils.getMatcherFirstString("(?<=<span class=\\\"cnt_cmt\\\">)(.|\\n)*?(?=</span>)", matchstr);
 			item.put("comment", strComment);
 
 			// name
-			String strName = Utils.getMatcherFirstString("(?<=</span></a> \\[)(.|\\n)*?(?=\\]<span)", matchstr);
-			if (strName.equalsIgnoreCase("")) {
-				strName = Utils.getMatcherFirstString("(?<=</span>\\[)(.|\\n)*?(?=\\]<span)", matchstr);
-			}
-			strName = strName.replaceAll("<((.|\\n)*?)+>", "");
-			strName = strName.trim();
+			String strName = Utils.getMatcherFirstString("(<span class=\\\"sv_member)(.|\\n)*?(<li>)", matchstr);
+			strName = Utils.repalceHtmlSymbol(strName);
+			item.put("name", strName);
+
+			// date
+			String strDate = Utils.getMatcherFirstString("(?<=작성일 </span>)(.|\\n)*?(?=</li>)", matchstr);
 			item.put("name", strName);
 
 			// 조회수
-			String strHit = Utils.getMatcherFirstString("(?<=<font face=\"Tahoma\"><b>\\[)(.|\\n)*?(?=\\]</b>)", matchstr);
-			strHit = strHit.replaceAll("<((.|\\n)*?)+>", "");
-			strHit = strHit.replaceAll("&nbsp;", "");
-			strHit = strHit.trim();
+			String strHit = Utils.getMatcherFirstString("(?<=조회 </span>)(.|\\n)*?(?=</li>)", matchstr);
 			item.put("hit", strHit);
 
-			// 조회수
-			String strPicLink = Utils.getMatcherFirstString("(?<=background=\\\")(.|\\n)*?(?=\\\")", matchstr);
-			strPicLink = strPicLink.trim();
+			// picLink
+			String strPicLink = Utils.getMatcherFirstString("(?<=<img src=\\\")(.|\\n)*?(?=\\\")", matchstr);
 			item.put("piclink", strPicLink);
 
 			m_arrayItems.add( item );
@@ -572,7 +502,6 @@ public class ItemsActivity extends AppCompatActivity implements Runnable {
         Intent intent = new Intent(this, ArticleWriteActivity.class);
 		int nMode = 0;	// 0 is New article
 		intent.putExtra("mode", nMode);
-	    intent.putExtra("commId", m_strCommId);
 	    intent.putExtra("boardId", m_strBoardId);
 	    intent.putExtra("boardNo",  "");
 		intent.putExtra("boardTitle", "");

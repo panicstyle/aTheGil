@@ -22,9 +22,10 @@ public class HttpRequest {
 	HttpClient httpClient;
 	HttpContext httpContext;
 
-	public String requestPost(String url, String strParam, String referer, String encode) {
+	public String requestPost(String url, String strParam, String referer) {
 		InputStream is = null;
 		String result = "";
+		String encode = "utf-8";
 		try {
 			/** 연결 타입아웃내에 연결되는지 테스트, 30초 이내에 되지 않는다면 에러 */
 			/** 네트웍 연결해서 데이타 받아오기 */
@@ -60,9 +61,10 @@ public class HttpRequest {
 		return result;
 	}
 
-	public String requestPost(String url, ArrayList<NameValuePair> postData, String referer, String encode) {
+	public String requestPost(String url, ArrayList<NameValuePair> postData, String referer) {
 		InputStream is = null;
 		String result = "";
+		String encode = "utf-8";
 		try {
 			/** 연결 타입아웃내에 연결되는지 테스트, 30초 이내에 되지 않는다면 에러 */
 			/** 네트웍 연결해서 데이타 받아오기 */
@@ -98,9 +100,10 @@ public class HttpRequest {
 		return result;
 	}
 
-	public String requestPostWithAttach(String url, HttpEntity entity, String referer, String encode, String boundary) {
+	public String requestPostWithAttach(String url, HttpEntity entity, String referer, String boundary) {
 		InputStream is = null;
 		String result = "";
+		String encode = "utf-8";
 		try {
 			/** 연결 타입아웃내에 연결되는지 테스트, 30초 이내에 되지 않는다면 에러 */
 			/** 네트웍 연결해서 데이타 받아오기 */
@@ -136,9 +139,10 @@ public class HttpRequest {
 		return result;
 	}
 
-	public String requestGet(String url, String referer, String encode) {
+	public String requestGet(String url, String referer) {
 		InputStream is = null;
 		String result = "";
+		String encode = "utf-8";
 		try {
 			/** 연결 타입아웃내에 연결되는지 테스트, 30초 이내에 되지 않는다면 에러 */
 			/** 네트웍 연결해서 데이타 받아오기 */
