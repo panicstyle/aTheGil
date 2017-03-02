@@ -20,15 +20,14 @@ public class Utils {
     public static String getMatcherString(String strPattern, String strContent, int nCount) {
         Matcher m = getMatcher(strPattern, strContent);
 
-        if (m.find()) { // Find each match in turn; String can't do this.
-            if (m.groupCount() > nCount - 1) {
-                return m.group(nCount);
-            } else {
-                return "";
+        int i = 0;
+        while (m.find()) { // Find each match in turn; String can't do this.
+            if (i == nCount) {
+                return m.group(0);
             }
-        } else {
-            return "";
+            i++;
         }
+        return "";
     }
 
     public static Matcher getMatcher(String strPattern, String strContent) {

@@ -243,13 +243,8 @@ public class ItemsActivity extends AppCompatActivity implements Runnable {
 					item = m_arrayItems.get(position);
 					Intent intent = new Intent(ItemsActivity.this, ArticleViewActivity.class);
 
-					if (m_nMode == 1) {
-						intent.putExtra("boardId", (String) item.get("boardId"));
-						intent.putExtra("boardNo", (String) item.get("boardNo"));
-					} else {
-						intent.putExtra("boardId", (String) item.get("boardId"));
-						intent.putExtra("boardNo", (String) item.get("boardNo"));
-					}
+					intent.putExtra("boardId", m_strBoardId);
+					intent.putExtra("boardNo", (String) item.get("boardNo"));
 					startActivityForResult(intent, REQUEST_VIEW);
 				}
 			}
@@ -368,7 +363,7 @@ public class ItemsActivity extends AppCompatActivity implements Runnable {
 
         HashMap<String, Object> item;
 
-		Matcher m = Utils.getMatcher("(<tr>)(.|\\n)*?(</tr>)", tbody);
+		Matcher m = Utils.getMatcher("(<tr)(.|\\n)*?(</tr>)", tbody);
         while (m.find()) { // Find each match in turn; String can't do this.
             item = new HashMap<String, Object>();
             String matchstr = m.group(0);
@@ -383,11 +378,12 @@ public class ItemsActivity extends AppCompatActivity implements Runnable {
             // subject
 	        String strSubject;
 			strSubject = Utils.getMatcherFirstString("(<a href=)(.|\\n)*?(</a>)", matchstr);
+			strSubject = Utils.removeSpan(strSubject);
 			strSubject = Utils.repalceHtmlSymbol(strSubject);
             item.put("subject", strSubject);
 
 	        // boardNo
-			String strBoardNo = Utils.getMatcherFirstString("(?<=<wr_id=)(.|\\n)*?(?=&amp)", matchstr);
+			String strBoardNo = Utils.getMatcherFirstString("(?<=wr_id=)(.|\\n)*?(?=&amp)", matchstr);
 			item.put("boardNo", strBoardNo);
 
 	        // comment
@@ -418,7 +414,7 @@ public class ItemsActivity extends AppCompatActivity implements Runnable {
             item.put("date", strDate);
 
 			// 조회수
-			String strHit = Utils.getMatcherFirstString("(?<=<td class=\\\"td_num\\\">)(.|\\n)*?(?=</td>)", matchstr);
+			String strHit = Utils.getMatcherString("(?<=<td class=\\\"td_num\\\">)(.|\\n)*?(?=</td>)", matchstr, 1);
 			item.put("hit", strHit);
 
             m_arrayItems.add( item );
@@ -444,8 +440,8 @@ public class ItemsActivity extends AppCompatActivity implements Runnable {
 
 			// subject
 			String strSubject = Utils.getMatcherFirstString("(<li class=\\\"gall_text_href)(.|\\n)*?(</li>)", matchstr);
-			strSubject = Utils.repalceHtmlSymbol(strSubject);
 			strSubject = Utils.removeSpan(strSubject);
+			strSubject = Utils.repalceHtmlSymbol(strSubject);
 			item.put("subject", strSubject);
 
 			// boardNo
