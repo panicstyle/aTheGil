@@ -38,14 +38,16 @@ import org.apache.http.protocol.HTTP;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class ArticleWriteActivity extends AppCompatActivity implements Runnable {
     private ProgressDialog m_pd;
+    private int m_nThreadMode;
     private int m_nMode;
     private String m_strBoardTitle;
     private String m_strBoardContent;
     private String m_strBoardId;
-    private String m_strCommId;
     private String m_strBoardNo;
     private boolean m_bSaveStatus;
     private String m_ErrorMsg;
@@ -55,6 +57,10 @@ public class ArticleWriteActivity extends AppCompatActivity implements Runnable 
     private int m_nAttached = 0;
     private static final int SELECT_PHOTO = 0;
     private TheGilApplication m_app;
+
+    private String m_strReferer;
+    private String m_strWmode;
+    private String m_strSCA;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,7 +74,11 @@ public class ArticleWriteActivity extends AppCompatActivity implements Runnable 
 
         intenter();
 
-        if (m_nMode == 1) {
+        if (m_nMode == GlobalConst.WRITE) {
+            setTitle("글쓰기");
+            m_strWmode = "";
+            m_strBoardNo = "0";
+        } else if (m_nMode == GlobalConst.MODIFY) {
             setTitle("글수정");
             m_strBoardTitle = Utils.repalceHtmlSymbol(m_strBoardTitle);
             m_strBoardContent = Utils.repalceHtmlSymbol(m_strBoardContent);
@@ -76,10 +86,19 @@ public class ArticleWriteActivity extends AppCompatActivity implements Runnable 
             textTitle.setText(m_strBoardTitle);
             EditText textContent = (EditText) findViewById(R.id.editContent);
             textContent.setText(m_strBoardContent);
+            m_strWmode = "u";
         } else {
-            setTitle("글쓰기");
+            setTitle("답글쓰기");
+            m_strWmode = "r";
         }
-
+        if (m_strBoardId == "B13") {
+            m_strSCA = "문서자료";
+        } else {
+            m_strSCA = "";
+        }
+        m_nThreadMode = GlobalConst.REQUEST;
+        Thread thread = new Thread(this);
+        thread.start();
     }
 
     public void intenter() {
@@ -87,7 +106,6 @@ public class ArticleWriteActivity extends AppCompatActivity implements Runnable 
     	Bundle extras = getIntent().getExtras();
     	// 가져온 값을 set해주는 부분
         m_nMode = extras.getInt("mode");
-        m_strCommId = extras.getString("commId");
         m_strBoardId = extras.getString("boardId");
         m_strBoardNo = extras.getString("boardNo");
         m_strBoardTitle = extras.getString("boardTitle");
@@ -118,16 +136,16 @@ public class ArticleWriteActivity extends AppCompatActivity implements Runnable 
         }
 
         m_pd = ProgressDialog.show(this, "", "저장중", true, false);
-
+        m_nThreadMode = GlobalConst.POST;
         Thread thread = new Thread(this);
         thread.start();
     }
 
     public void run() {
-        if (m_nMode == 0) {
-            PostData();
+        if (m_nThreadMode == GlobalConst.REQUEST) {
+            requestEditPage();
         } else {
-            PostModifyData();
+            PostData();
         }
     	handler.sendEmptyMessage(0);
     }
@@ -135,52 +153,47 @@ public class ArticleWriteActivity extends AppCompatActivity implements Runnable 
     private Handler handler = new Handler() {
     	@Override
     	public void handleMessage(Message msg) {
-            if(m_pd != null){
-                if(m_pd.isShowing()){
-                    m_pd.dismiss();
+            if (m_nThreadMode == GlobalConst.REQUEST) {
+                finish();
+            } else {
+                if(m_pd != null){
+                    if(m_pd.isShowing()){
+                        m_pd.dismiss();
+                    }
                 }
+                if (!m_bSaveStatus) {
+                    AlertDialog.Builder ab = null;
+                    ab = new AlertDialog.Builder( ArticleWriteActivity.this );
+                    String strErrorMsg = "글 저장중 오류가 발생했습니다. \n" + m_ErrorMsg;
+                    ab.setMessage(strErrorMsg);
+                    ab.setPositiveButton(android.R.string.ok, null);
+                    ab.setTitle( "확인" );
+                    ab.show();
+                    return;
+                }
+                finish();
             }
-    		if (!m_bSaveStatus) {
-	    		AlertDialog.Builder ab = null;
-				ab = new AlertDialog.Builder( ArticleWriteActivity.this );
-				String strErrorMsg = "글 저장중 오류가 발생했습니다. \n" + m_ErrorMsg;
-				ab.setMessage(strErrorMsg);
-				ab.setPositiveButton(android.R.string.ok, null);
-				ab.setTitle( "확인" );
-				ab.show();
-				return;
-    		}
-            finish();
-    	}
+        }
     };
+
+    protected void requestEditPage() {
+        m_strReferer = GlobalConst.WWW_SERVER + "/2014/bbs/write.php?w=" + m_strWmode + "&bo_table=" + m_strBoardId + "&wr_id=" + m_strBoardNo + "&page=";
+        m_app.m_httpRequest.requestGet(m_strReferer, "");
+    }
 
     protected boolean PostData() {
 
-        String url = "http://cafe.gongdong.or.kr/cafe.php?mode=up&p2=&p1=" + m_strCommId + "&sort=" + m_strBoardId;
+        String url = GlobalConst.WWW_SERVER + "/2014/bbs/write_update.php";
 
-        return PostDataCore(url);
-    }
-
-    protected boolean PostModifyData() {
-        String url = "http://cafe.gongdong.or.kr/cafe.php?mode=edit&p2=&p1=" + m_strCommId + "&sort=" + m_strBoardId;
-
-        return PostDataCore(url);
-    }
-
-    protected boolean PostDataCore(String url) {
         m_bSaveStatus = false;
+
+        Date now = new Date();
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmssSSSS");
+        String strUID = format.format(now);
 
         String boundary = "-------------" + System.currentTimeMillis();
         ContentType contentType = ContentType.create(HTTP.PLAIN_TEXT_TYPE, HTTP.UTF_8);
-//        ByteArrayBody bab = new ByteArrayBody(imageBytes, "pic.png");
-//        StringBody sbOwner = new StringBody(StaticData.loggedUserId, ContentType.TEXT_PLAIN);
-        StringBody sbNumber = new StringBody(m_strBoardNo, contentType);
-        StringBody sbUseTag = new StringBody("n", contentType);
-        StringBody sbSubject = new StringBody(m_strBoardTitle, contentType);
-        StringBody sbSample = new StringBody("", contentType);
-        StringBody sbSub_Sort = new StringBody("0", contentType);
-        StringBody sbContent = new StringBody(m_strBoardContent, contentType);
-        HttpEntity entity;
+        HttpEntity entity = null;
         try {
             Charset chars = Charset.forName("UTF-8");
             MultipartEntityBuilder builder;
@@ -188,12 +201,22 @@ public class ArticleWriteActivity extends AppCompatActivity implements Runnable 
             builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
             builder.setCharset(chars);
             builder.setBoundary(boundary);
-            builder.addPart("number", sbNumber);
-            builder.addPart("usetag", sbUseTag);
-            builder.addPart("subject", sbSubject);
-            builder.addPart("sample", sbSample);
-            builder.addPart("sub_sort", sbSub_Sort);
-            builder.addPart("content", sbContent);
+            builder.addPart("uid", new StringBody(strUID, contentType));
+            builder.addPart("w", new StringBody(m_strWmode, contentType));
+            builder.addPart("bo_table", new StringBody(m_strBoardId, contentType));
+            builder.addPart("wr_id", new StringBody(m_strBoardNo, contentType));
+            builder.addPart("sca", new StringBody(m_strSCA, contentType));
+            builder.addPart("sfl", new StringBody("", contentType));
+            builder.addPart("stx", new StringBody("", contentType));
+            builder.addPart("sst", new StringBody("", contentType));
+            builder.addPart("sod", new StringBody("", contentType));
+            builder.addPart("page", new StringBody("", contentType));
+            builder.addPart("html", new StringBody("html1   ", contentType));
+            builder.addPart("wr_subject", new StringBody(m_strBoardTitle, contentType));
+            builder.addPart("wr_content", new StringBody(m_strBoardContent, contentType));
+            builder.addPart("wr_link1", new StringBody("", contentType));
+            builder.addPart("wr_link2", new StringBody("", contentType));
+/*
             for (int i = 0; i < 5; i++) {
                 if (m_arrayAttached[i]) {
                     InputStream imageStream = getContentResolver().openInputStream(m_arrayUri[i]);
@@ -202,23 +225,25 @@ public class ArticleWriteActivity extends AppCompatActivity implements Runnable 
                         m_ErrorMsg = "이미지 파일을 읽을 수 없습니다." + m_arrayUri[i];
                         return false;
                     }
-                    InputStreamBody inputStreamBody = new InputStreamBody(imageStream, fileName);
+                    InputStreamBody inputStreamBody = new    InputStreamBody(imageStream, fileName);
 
                     builder.addPart("imgfile[]", inputStreamBody);
-                    builder.addPart("file_text[]", sbSample);
+                    builder.addPart("file_text[]", new StringBody("", contentType));
                 }
             }
+*/
             entity = builder.build();
-            String result = m_app.m_httpRequest.requestPostWithAttach(url, entity, "",  boundary);
-
-            if (!result.contains("<meta http-equiv=\"refresh\" content=\"0;url=/cafe.php?sort=")) {
-                m_ErrorMsg = Utils.getMatcherFirstString("(?<=window.alert\\(\\\")(.|\\n)*?(?=\\\")", result);
-                return false;
-            }
-
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
+        String result = m_app.m_httpRequest.requestPostWithAttach(url, entity, m_strReferer, boundary);
+
+        if (!result.contains("<title>오류안내 페이지")) {
+            m_ErrorMsg = Utils.getMatcherFirstString("(<p class=\\\"cbg\\\">).*?(</p>)", result);
+            m_ErrorMsg = Utils.repalceHtmlSymbol(m_ErrorMsg);
+            return false;
+        }
+
         m_bSaveStatus = true;
 
         return true;

@@ -496,8 +496,7 @@ public class ItemsActivity extends AppCompatActivity implements Runnable {
 
 	public void addArticle() {
         Intent intent = new Intent(this, ArticleWriteActivity.class);
-		int nMode = 0;	// 0 is New article
-		intent.putExtra("mode", nMode);
+		intent.putExtra("mode", GlobalConst.WRITE);
 	    intent.putExtra("boardId", m_strBoardId);
 	    intent.putExtra("boardNo",  "");
 		intent.putExtra("boardTitle", "");

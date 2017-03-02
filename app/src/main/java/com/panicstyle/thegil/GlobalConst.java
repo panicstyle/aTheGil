@@ -6,4 +6,11 @@ package com.panicstyle.thegil;
 public class GlobalConst {
     public static String MENU_SERVER = "http://www.moojigae.or.kr";
     public static String WWW_SERVER = "http://thegil.org";
+
+    public static int WRITE = 1;
+    public static int MODIFY = 2;
+    public static int REPLY = 3;
+
+    public static int REQUEST = 1;
+    public static int POST = 2;
 }
