@@ -65,7 +65,7 @@ public class CommentWriteActivity extends AppCompatActivity implements Runnable 
     	m_strBoardId = extras.getString("boardId");
     	m_strBoardNo = extras.getString("boardNo");
     	m_strCommentNo = extras.getString("commentNo");
-        m_strComment = extras.getString("content");
+        m_strComment = extras.getString("comment");
 
     }
 	
