@@ -152,7 +152,7 @@ public class CommentWriteActivity extends AppCompatActivity implements Runnable 
 		String result = m_app.m_httpRequest.requestPost(url, nameValuePairs, url);
 
         if (result.contains("<title>오류안내 페이지")) {
-            m_ErrorMsg = Utils.getMatcherFirstString("(<p class=\\\"cbg\\\">).*?(</p>)", result);
+            m_ErrorMsg = Utils.getMatcherFirstString("(<p class=\\\"cbg\\\">)(.|\\n)*?(</p>)", result);
             m_ErrorMsg = Utils.repalceHtmlSymbol(m_ErrorMsg);
             return false;
         }

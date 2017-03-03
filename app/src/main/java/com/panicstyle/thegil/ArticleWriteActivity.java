@@ -238,7 +238,7 @@ public class ArticleWriteActivity extends AppCompatActivity implements Runnable 
         String result = m_app.m_httpRequest.requestPostWithAttach(url, entity, m_strReferer, boundary);
 
         if (result.contains("<title>오류안내 페이지")) {
-            m_ErrorMsg = Utils.getMatcherFirstString("(<p class=\\\"cbg\\\">).*?(</p>)", result);
+            m_ErrorMsg = Utils.getMatcherFirstString("(<p class=\\\"cbg\\\">)(.|\\n)*?(</p>)", result);
             m_ErrorMsg = Utils.repalceHtmlSymbol(m_ErrorMsg);
             return false;
         }

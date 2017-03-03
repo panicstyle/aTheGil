@@ -195,14 +195,23 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 HashMap<String, Object> item = new HashMap<String, Object>();
                 String boardName = null;
                 String boardId = null;
+                String boardType;
                 item = (HashMap<String, Object>) m_arrayItems.get(position);
                 boardName = (String) item.get("title");
                 boardId = (String) item.get("boardId");
+                boardType = (String) item.get("type");
 
-                Intent intent = new Intent(MainActivity.this, ItemsActivity.class);
-                intent.putExtra("boardName", boardName);
-                intent.putExtra("boardId", boardId);
-                startActivity(intent);
+                if (boardType.equals("new")) {
+                    Intent intent = new Intent(MainActivity.this, NewActivity.class);
+                    intent.putExtra("boardName", boardName);
+                    intent.putExtra("boardId", boardId);
+                    startActivity(intent);
+                } else {
+                    Intent intent = new Intent(MainActivity.this, ItemsActivity.class);
+                    intent.putExtra("boardName", boardName);
+                    intent.putExtra("boardId", boardId);
+                    startActivity(intent);
+                }
             }
         });
 
