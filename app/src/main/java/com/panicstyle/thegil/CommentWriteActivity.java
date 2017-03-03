@@ -24,8 +24,6 @@ import java.util.ArrayList;
 public class CommentWriteActivity extends AppCompatActivity implements Runnable {
     private ProgressDialog m_pd;
     private int m_nMode;
-    private int m_nPNotice;
-    private String m_strCommId;
     private String m_strBoardId;
     private String m_strBoardNo;
     private String m_strCommentNo;
@@ -33,6 +31,7 @@ public class CommentWriteActivity extends AppCompatActivity implements Runnable 
     private String m_ErrorMsg;
     private String m_strComment;
     private TheGilApplication m_app;
+    private String m_strWmode;
 
 	public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,13 +41,19 @@ public class CommentWriteActivity extends AppCompatActivity implements Runnable 
 
         intenter();
 
-        if (m_nMode == 1) {
+        if (m_nMode == GlobalConst.WRITE) {
+            setTitle("댓글쓰기");
+            m_strWmode = "c";
+            m_strCommentNo = "";
+        } else if (m_nMode == GlobalConst.MODIFY) {
             setTitle("댓글수정");
+            m_strWmode = "cu";
             m_strComment = Utils.repalceHtmlSymbol(m_strComment);
             EditText tContent = (EditText) findViewById(R.id.editContent);
             tContent.setText(m_strComment);
         } else {
-            setTitle("댓글쓰기");
+            setTitle("답변댓글쓰기");
+            m_strWmode = "c";
         }
     }
 
@@ -57,8 +62,6 @@ public class CommentWriteActivity extends AppCompatActivity implements Runnable 
     	Bundle extras = getIntent().getExtras();
     	// 가져온 값을 set해주는 부분
         m_nMode = extras.getInt("mode");
-        m_nPNotice = extras.getInt("isPNotice");
-    	m_strCommId = extras.getString("commId");
     	m_strBoardId = extras.getString("boardId");
     	m_strBoardNo = extras.getString("boardNo");
     	m_strCommentNo = extras.getString("commentNo");
@@ -100,19 +103,7 @@ public class CommentWriteActivity extends AppCompatActivity implements Runnable 
     }
 
     public void run() {
-        if (m_nMode == 0) {
-            if (m_nPNotice == 0) {
-                PostData();
-            } else {
-                PostDataPNotice();
-            }
-        } else {
-            if (m_nPNotice == 0) {
-                PostModifyData();
-            } else {
-                PostModifyDataPNotice();
-            }
-        }
+        PostData();
     	handler.sendEmptyMessage(0);
     }
 
@@ -139,103 +130,35 @@ public class CommentWriteActivity extends AppCompatActivity implements Runnable 
     };        
     	
     protected boolean PostData() {
-		String url = "http://cafe.gongdong.or.kr/cafe.php?mode=up_add&sub_sort=&p2=&p1=" + m_strCommId + "&sort=" + m_strBoardId;
+        String m_strSCA = "";
+        if (m_strBoardId == "B13") {
+            m_strSCA = "문서자료";
+        }
+
+		String url = GlobalConst.WWW_SERVER + "/2014/bbs/write_comment_update.php";
         String strParam = "number=" + m_strBoardNo + "&content=" + m_strComment;
         ArrayList<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
-        nameValuePairs.add(new BasicNameValuePair("number", m_strBoardNo));
-        if (m_strCommentNo.length() > 0) {
-            nameValuePairs.add(new BasicNameValuePair("number_re", m_strCommentNo));
-        }
-        nameValuePairs.add(new BasicNameValuePair("content", m_strComment));
+        nameValuePairs.add(new BasicNameValuePair("w", m_strWmode));
+        nameValuePairs.add(new BasicNameValuePair("bo_table", m_strBoardId));
+        nameValuePairs.add(new BasicNameValuePair("wr_id", m_strBoardNo));
+        nameValuePairs.add(new BasicNameValuePair("comment_id", m_strCommentNo));
+        nameValuePairs.add(new BasicNameValuePair("sca", m_strSCA));
+        nameValuePairs.add(new BasicNameValuePair("sfl", ""));
+        nameValuePairs.add(new BasicNameValuePair("stx", ""));
+        nameValuePairs.add(new BasicNameValuePair("spt", ""));
+        nameValuePairs.add(new BasicNameValuePair("page", ""));
+        nameValuePairs.add(new BasicNameValuePair("is_good", "0"));
+        nameValuePairs.add(new BasicNameValuePair("wr_content", m_strComment));
 		String result = m_app.m_httpRequest.requestPost(url, nameValuePairs, url);
 
-        if (!result.contains("<meta http-equiv=\"refresh\" content=\"0;url=/cafe.php?sort=")) {
-            m_ErrorMsg = Utils.getMatcherFirstString("(?<=window.alert\\(\\\")(.|\\n)*?(?=\\\")", result);
-			m_bSaveStatus = false;
-			return false;
+        if (result.contains("<title>오류안내 페이지")) {
+            m_ErrorMsg = Utils.getMatcherFirstString("(<p class=\\\"cbg\\\">).*?(</p>)", result);
+            m_ErrorMsg = Utils.repalceHtmlSymbol(m_ErrorMsg);
+            return false;
         }
         
 		m_bSaveStatus = true;
     	return true;
-    }
-
-    protected boolean PostModifyData() {
-        String url = "http://cafe.gongdong.or.kr/cafe.php?mode=edit_reply&p2=&p1=" + m_strCommId + "&sort=" + m_strBoardId;
-        ArrayList<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
-        nameValuePairs.add(new BasicNameValuePair("number", m_strCommentNo));
-        nameValuePairs.add(new BasicNameValuePair("content", m_strComment));
-        String result = m_app.m_httpRequest.requestPost(url, nameValuePairs, url);
-
-        if (!result.contains("<meta http-equiv=\"refresh\" content=\"0;url=/cafe.php?sort=")) {
-            m_ErrorMsg = Utils.getMatcherFirstString("(?<=window.alert\\(\\\")(.|\\n)*?(?=\\\")", result);
-            m_bSaveStatus = false;
-            return false;
-        }
-
-        m_bSaveStatus = true;
-        return true;
-    }
-
-    protected boolean PostDataPNotice() {
-        String url = "http://www.gongdong.or.kr/index.php";
-        String strPostParam = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                "<methodCall>\n" +
-                "<params>\n" +
-                "<_filter><![CDATA[insert_comment]]></_filter>\n" +
-                "<error_return_url><![CDATA[/notice/" + m_strBoardNo + "]]></error_return_url>\n" +
-                "<mid><![CDATA[notice]]></mid>\n" +
-                "<document_srl><![CDATA[" + m_strBoardNo + "]]></document_srl>\n" +
-                "<comment_srl><![CDATA[0]]></comment_srl>\n" +
-                "<content><![CDATA[<p>" + m_strComment + "</p>\n" +
-                "]]></content>\n" +
-                "<module><![CDATA[board]]></module>\n" +
-                "<act><![CDATA[procBoardInsertComment]]></act>\n" +
-                "</params>\n" +
-                "</methodCall>";
-
-        String strReferer = "http://www.gongdong.or.kr/notice/" + m_strBoardNo;
-        String result = m_app.m_httpRequest.requestPost(url, strPostParam, strReferer);
-
-        if (!result.contains("<error>0</error>")) {
-            m_ErrorMsg = Utils.getMatcherFirstString("(?<=<message>)(.|\\n)*?(?=</message>)", result);
-            m_bSaveStatus = false;
-            return false;
-        }
-
-        m_bSaveStatus = true;
-        return true;
-    }
-
-    protected boolean PostModifyDataPNotice() {
-        String url = "http://www.gongdong.or.kr/index.php";
-        String strPostParam = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                "<methodCall>\n" +
-                "<params>\n" +
-                "<_filter><![CDATA[insert_comment]]></_filter>\n" +
-                "<error_return_url><![CDATA[/index.php?mid=notice&document_srl=" + m_strBoardNo
-                    + "&act=dispBoardModifyComment&comment_srl=" + m_strCommentNo +"]]></error_return_url>\n" +
-                "<act><![CDATA[procBoardInsertComment]]></act>\n" +
-                "<mid><![CDATA[notice]]></mid>\n" +
-                "<document_srl><![CDATA[" + m_strBoardNo + "]]></document_srl>\n" +
-                "<comment_srl><![CDATA[" + m_strCommentNo + "]]></comment_srl>\n" +
-                "<content><![CDATA[<p>" + m_strComment + "</p>\n" +
-                "]]></content>\n" +
-                "<parent_srl><![CDATA[0]]></parent_srl>\n" +
-                "<module><![CDATA[board]]></module>\n" +
-                "</params>\n" +
-                "</methodCall>";
-        String strReferer = "http://www.gongdong.or.kr/index.php?mid=notice&document_srl=" + m_strBoardNo
-                + "&act=dispBoardModifyComment&comment_srl=" + m_strCommentNo;
-        String result = m_app.m_httpRequest.requestPost(url, strPostParam, strReferer);
-
-        if (!result.contains("<error>0</error>")) {
-            m_ErrorMsg = Utils.getMatcherFirstString("(?<=<message>)(.|\\n)*?(?=</message>)", result);
-            m_bSaveStatus = false;
-            return false;
-        }
-
-        m_bSaveStatus = true;
-        return true;
     }
 
     public void CancelData() {

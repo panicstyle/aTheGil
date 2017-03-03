@@ -154,7 +154,7 @@ public class ArticleWriteActivity extends AppCompatActivity implements Runnable 
     	@Override
     	public void handleMessage(Message msg) {
             if (m_nThreadMode == GlobalConst.REQUEST) {
-                finish();
+                return;
             } else {
                 if(m_pd != null){
                     if(m_pd.isShowing()){
@@ -216,7 +216,7 @@ public class ArticleWriteActivity extends AppCompatActivity implements Runnable 
             builder.addPart("wr_content", new StringBody(m_strBoardContent, contentType));
             builder.addPart("wr_link1", new StringBody("", contentType));
             builder.addPart("wr_link2", new StringBody("", contentType));
-/*
+
             for (int i = 0; i < 5; i++) {
                 if (m_arrayAttached[i]) {
                     InputStream imageStream = getContentResolver().openInputStream(m_arrayUri[i]);
@@ -227,18 +227,17 @@ public class ArticleWriteActivity extends AppCompatActivity implements Runnable 
                     }
                     InputStreamBody inputStreamBody = new    InputStreamBody(imageStream, fileName);
 
-                    builder.addPart("imgfile[]", inputStreamBody);
-                    builder.addPart("file_text[]", new StringBody("", contentType));
+                    builder.addPart("bf_file[]", inputStreamBody);
                 }
             }
-*/
+
             entity = builder.build();
         } catch (Exception e) {
             e.printStackTrace();
         }
         String result = m_app.m_httpRequest.requestPostWithAttach(url, entity, m_strReferer, boundary);
 
-        if (!result.contains("<title>오류안내 페이지")) {
+        if (result.contains("<title>오류안내 페이지")) {
             m_ErrorMsg = Utils.getMatcherFirstString("(<p class=\\\"cbg\\\">).*?(</p>)", result);
             m_ErrorMsg = Utils.repalceHtmlSymbol(m_ErrorMsg);
             return false;

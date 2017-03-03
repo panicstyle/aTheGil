@@ -13,4 +13,8 @@ public class GlobalConst {
 
     public static int REQUEST = 1;
     public static int POST = 2;
+
+    public static int LOAD_DATA = 1;
+    public static int DELETE_ARTICLE = 2;
+    public static int DELETE_COMMENT = 3;
 }

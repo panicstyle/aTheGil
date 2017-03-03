@@ -109,7 +109,7 @@ public class ArticleViewActivity extends AppCompatActivity implements Runnable {
         m_arrayItems = new ArrayList<>();
         m_arrayAttach = new ArrayList<>();
 
-        m_nThreadMode = 1;
+        m_nThreadMode = GlobalConst.LOAD_DATA;
         LoadData("로딩중");
     }
 
@@ -123,7 +123,7 @@ public class ArticleViewActivity extends AppCompatActivity implements Runnable {
     }
 
     public void run() {
-        if (m_nThreadMode == 1) {         // LoadData
+        if (m_nThreadMode == GlobalConst.LOAD_DATA) {         // LoadData
             boolean ret;
 
             ret = getData();
@@ -144,9 +144,9 @@ public class ArticleViewActivity extends AppCompatActivity implements Runnable {
             } else {
                 m_nLoginStatus = 1;
             }
-        } else if (m_nThreadMode == 2) {      // Delete Article
+        } else if (m_nThreadMode == GlobalConst.DELETE_ARTICLE) {      // Delete Article
             runDeleteArticle();
-        } else if (m_nThreadMode == 3) {      // DeleteComment
+        } else if (m_nThreadMode == GlobalConst.DELETE_COMMENT) {      // DeleteComment
             runDeleteComment();
         }
         handler.sendEmptyMessage(0);
@@ -351,6 +351,9 @@ public class ArticleViewActivity extends AppCompatActivity implements Runnable {
         m_strAttach = Utils.getMatcherFirstString("(<!-- 첨부파일 시작)(.|\\n)*?(첨부파일 끝 -->)", result);
         m_strAttach = m_strAttach.replaceAll("<h2>첨부파일</h2>", "");
 
+        String strImage = Utils.getMatcherFirstString("(<div id=\\\"bo_v_img\\\">)(.|\\n)*?(</div>)", result);
+        strImage = strImage.replaceAll("<img ", "<img onload=\"resizeImage2(this)\" ");
+
         // 각 항목 찾기
         m_arrayItems.clear();
         m_arrayAttach.clear();
@@ -403,7 +406,7 @@ public class ArticleViewActivity extends AppCompatActivity implements Runnable {
         String strResize = "<script>function resizeImage2(mm){var width = eval(mm.width);var height = eval(mm.height);if( width > 300 ){var p_height = 300 / width;var new_height = height * p_height;eval(mm.width = 300);eval(mm.height = new_height);}} function image_open(src, mm) {var src1 = 'image2.php?imgsrc='+src;window.open(src1,'image','width=1,height=1,scrollbars=yes,resizable=yes');}</script>";
         String strBottom = "</body></html>";
 
-    	m_strHTML = strHeader + strResize + m_strContent + m_strAttach + strBottom;
+    	m_strHTML = strHeader + strResize + m_strAttach + strImage + m_strContent + strBottom;
 
         return true;
     }
@@ -485,8 +488,7 @@ public class ArticleViewActivity extends AppCompatActivity implements Runnable {
 
     public void addReArticle() {
         Intent intent = new Intent(this, ArticleWriteActivity.class);
-        int nMode = 0;      // i is modify article
-        intent.putExtra("mode", nMode);
+        intent.putExtra("mode", GlobalConst.REPLY);
         intent.putExtra("boardId", m_strBoardId);
         intent.putExtra("boardNo", m_strBoardNo);
         intent.putExtra("boardTitle", "");
@@ -496,8 +498,7 @@ public class ArticleViewActivity extends AppCompatActivity implements Runnable {
 
     public void modifyArticle() {
         Intent intent = new Intent(this, ArticleWriteActivity.class);
-        int nMode = 1;      // i is modify article
-        intent.putExtra("mode", nMode);
+        intent.putExtra("mode", GlobalConst.MODIFY);
         intent.putExtra("boardId", m_strBoardId);
         intent.putExtra("boardNo", m_strBoardNo);
         intent.putExtra("boardTitle", m_strTitle);
@@ -507,8 +508,7 @@ public class ArticleViewActivity extends AppCompatActivity implements Runnable {
 
     public void addComment() {
         Intent intent = new Intent(this, CommentWriteActivity.class);
-        int nMode = 0;      // i is modify article
-        intent.putExtra("mode", nMode);
+        intent.putExtra("mode", GlobalConst.WRITE);
         intent.putExtra("boardId", m_strBoardId);
         intent.putExtra("boardNo", m_strBoardNo);
         intent.putExtra("commentNo", "");
@@ -531,24 +531,22 @@ public class ArticleViewActivity extends AppCompatActivity implements Runnable {
     }
     
     protected void DeleteArticle() {
-        m_nThreadMode = 2;
+        m_nThreadMode = GlobalConst.DELETE_ARTICLE;
         LoadData("삭제중");
     }
 
     protected void runDeleteArticle() {
-		String url = "http://cafe.gongdong.or.kr/cafe.php?mode=del&sort=" + m_strBoardId + "&sub_sort=&p1=" + m_strCommId + "&p2=";
+		String url = GlobalConst.WWW_SERVER + "/2014/bbs/delete.php?bo_table=" + m_strBoardId + "&wr_id=" + m_strBoardNo + "&page=";
 
-        ArrayList<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
-        nameValuePairs.add(new BasicNameValuePair("number", m_strBoardNo));
-        nameValuePairs.add(new BasicNameValuePair("passwd", ""));
-
-		String result = m_app.m_httpRequest.requestPost(url, nameValuePairs, url);
+		String result = m_app.m_httpRequest.requestGet(url, url);
 
         m_bDeleteStatus = true;
-        if (!result.contains("<meta http-equiv=\"refresh\" content=\"0;url=/cafe.php?sort=")) {
-            String strErrorMsg = Utils.getMatcherFirstString("(?<=window.alert\\(\\\")(.|\\n)*?(?=\\\")", result);
+        if (result.contains("<title>오류안내 페이지")) {
+            String strErrorMsg = Utils.getMatcherFirstString("(<p class=\\\"cbg\\\">).*?(</p>)", result);
+            strErrorMsg = Utils.repalceHtmlSymbol(strErrorMsg);
+            m_strErrorMsg = "글 삭제중 오류가 발생했습니다. \n" + strErrorMsg;
             m_bDeleteStatus = false;
-			m_strErrorMsg = "글 삭제중 오류가 발생했습니다. \n" + strErrorMsg;
+            return;
         }
     }
 
@@ -604,9 +602,7 @@ public class ArticleViewActivity extends AppCompatActivity implements Runnable {
 
     protected void ModifyComment() {
         Intent intent = new Intent(this, CommentWriteActivity.class);
-        int nMode = 1;
-        intent.putExtra("mode", nMode);
-        intent.putExtra("commId", m_strCommId);
+        intent.putExtra("mode", GlobalConst.MODIFY);
         intent.putExtra("boardId", m_strBoardId);
         intent.putExtra("boardNo",  m_strBoardNo);
         intent.putExtra("commentNo",  m_strCommentNo);
@@ -629,50 +625,22 @@ public class ArticleViewActivity extends AppCompatActivity implements Runnable {
     }
     
     protected void DeleteComment() {
-        m_nThreadMode = 3;
+        m_nThreadMode = GlobalConst.DELETE_COMMENT;
         LoadData("삭제중");
     }
 
     protected void runDeleteComment() {
-		HttpRequest httpRequest = new HttpRequest();
-		
-		String url = "http://cafe.gongdong.or.kr/cafe.php?mode=del_reply&sort=" + m_strBoardId + "&sub_sort=&p1=" + m_strCommId + "&p2=";
+		String url = GlobalConst.WWW_SERVER + "/2014/bbs/delete_comment.php?bo_table=" + m_strBoardId + "&comment_id=" + m_strCommentNo + "&token=&page=";
 
-        ArrayList<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
-        nameValuePairs.add(new BasicNameValuePair("number", m_strCommentNo));
-
-		String result  = m_app.m_httpRequest.requestPost(url, nameValuePairs, url);
+		String result  = m_app.m_httpRequest.requestGet(url, url);
 
         m_bDeleteStatus = true;
-        if (!result.contains("<meta http-equiv=\"refresh\" content=\"0;url=/cafe.php?sort=")) {
-            String strErrorMsg = Utils.getMatcherFirstString("(?<=window.alert\\(\\\")(.|\\n)*?(?=\\\")", result);
-            m_bDeleteStatus = false;
-			m_strErrorMsg = "댓글 삭제중 오류가 발생했습니다. \n" + strErrorMsg;
-        }
-    }
-
-    protected void runDeleteCommentPNotice() {
-        String url = "http://www.gongdong.or.kr/index.php";
-        String strPostParam = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                "<methodCall>\n" +
-                "<params>\n" +
-                "<_filter><![CDATA[delete_comment]]></_filter>\n" +
-                "<error_return_url><![CDATA[/index.php?mid=notice&document_srl=" + m_strBoardNo + "&act=dispBoardDeleteComment&comment_srl=" + m_strCommentNo + "]]></error_return_url>\n" +
-                "<act><![CDATA[procBoardDeleteComment]]></act>\n" +
-                "<mid><![CDATA[notice]]></mid>\n" +
-                "<document_srl><![CDATA[" + m_strBoardNo + "]]></document_srl>\n" +
-                "<comment_srl><![CDATA[" + m_strCommentNo + "]]></comment_srl>\n" +
-                "<module><![CDATA[board]]></module>\n" +
-                "</params>\n" +
-                "</methodCall>";
-        String strReferer = "http://www.gongdong.or.kr/index.php?mid=notice&document_srl=" + m_strBoardNo + "&act=dispBoardDeleteComment&comment_srl=" + m_strCommentNo;
-        String result  = m_app.m_httpRequest.requestPost(url, strPostParam, strReferer);
-
-        m_bDeleteStatus = true;
-        if (!result.contains("<error>0</error>")) {
-            String strErrorMsg = Utils.getMatcherFirstString("(?<=<message>)(.|\\n)*?(?=</message>)", result);
-            m_bDeleteStatus = false;
+        if (result.contains("<title>오류안내 페이지")) {
+            String strErrorMsg = Utils.getMatcherFirstString("(<p class=\\\"cbg\\\">).*?(</p>)", result);
+            strErrorMsg = Utils.repalceHtmlSymbol(strErrorMsg);
             m_strErrorMsg = "댓글 삭제중 오류가 발생했습니다. \n" + strErrorMsg;
+            m_bDeleteStatus = false;
+            return;
         }
     }
 
