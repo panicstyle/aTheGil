@@ -53,6 +53,15 @@
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:autoLink="web" />
 
+        <TextView
+            android:id="@+id/textSourcePage"
+            android:layout_marginTop="16dip"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Source : https://github.com/panicstyle/aTheGil"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:autoLink="web" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"

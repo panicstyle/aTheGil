@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -113,6 +114,10 @@ public class ItemsActivity extends AppCompatActivity implements Runnable {
 				if (m_nMode == 1) {
 					ViewHolder holder;
 
+					HashMap<String, Object> item;;
+					item = arrayItems.get(position);
+					int isReply = (Integer) item.get("isReply");
+
 					if (convertView != null) {
 						Object a = convertView.getTag();
 						if (!(a instanceof ViewHolder)) {
@@ -120,42 +125,36 @@ public class ItemsActivity extends AppCompatActivity implements Runnable {
 						}
 					}
 					if (convertView == null) {
-						convertView = mInflater.inflate(R.layout.list_item_itemsview, null);
+						if (isReply == 1) {
+							convertView = mInflater.inflate(R.layout.list_item_reitemsview, null);
+						} else {
+							convertView = mInflater.inflate(R.layout.list_item_itemsview, null);
+						}
 
 						holder = new ViewHolder();
-						holder.date = (TextView) convertView.findViewById(R.id.date);
 						holder.name = (TextView) convertView.findViewById(R.id.name);
 						holder.subject = (TextView) convertView.findViewById(R.id.subject);
 						holder.comment = (TextView) convertView.findViewById(R.id.comment);
 						holder.iconnew = (ImageView) convertView.findViewById(R.id.iconnew);
-						holder.iconreply = (ImageView) convertView.findViewById(R.id.iconreply);
 
 						convertView.setTag(holder);
 					} else {
 						holder = (ViewHolder) convertView.getTag();
 					}
-					HashMap<String, Object> item;;
-					item = arrayItems.get(position);
 					String date = (String) item.get("date");
 					String name = (String) item.get("name");
 					String subject = (String) item.get("subject");
 					String comment = (String) item.get("comment");
 					int isNew = (Integer) item.get("isNew");
-					int isReply = (Integer) item.get("isReply");
 					// Bind the data efficiently with the holder.
-					holder.date.setText(date);
-					holder.name.setText(name);
+					name = "<b>" + name + "</b>&nbsp;" + date;
+					holder.name.setText(Html.fromHtml(name));
 					holder.subject.setText(subject);
 					holder.comment.setText(comment);
 					if (isNew == 1) {
 						holder.iconnew.setImageResource(R.drawable.circle);
 					} else {
 						holder.iconnew.setImageResource(0);
-					}
-					if (isReply == 1) {
-						holder.iconreply.setImageResource(R.drawable.ic_keyboard_arrow_right_black_24dp);
-					} else {
-						holder.iconreply.setImageResource(0);
 					}
 					if (comment.length() > 0) {
 						holder.comment.setBackgroundResource(R.drawable.layout_circle);
@@ -182,11 +181,13 @@ public class ItemsActivity extends AppCompatActivity implements Runnable {
 					HashMap<String, Object> item;
 					item = arrayItems.get(position);
 					String name = (String) item.get("name");
+					String date = (String) item.get("date");
 					String subject = (String) item.get("subject");
 					String comment = (String) item.get("comment");
 					String strPicLink = (String) item.get("piclink");
 
-					holder.name.setText(name);
+					name = "<b>" + name + "</b>&nbsp;" + date;
+					holder.name.setText(Html.fromHtml(name));
 					holder.subject.setText(subject);
 					holder.comment.setText(comment);
 					holder.thumnail.setImageBitmap(null);
@@ -204,12 +205,10 @@ public class ItemsActivity extends AppCompatActivity implements Runnable {
         }
 
 		static class ViewHolder {
-			TextView date;
 			TextView name;
 			TextView subject;
 			TextView comment;
 			ImageView iconnew;
-			ImageView iconreply;
 		}
 
 		static class PicHolder {
@@ -459,7 +458,7 @@ public class ItemsActivity extends AppCompatActivity implements Runnable {
 
 			// date
 			String strDate = Utils.getMatcherFirstString("(?<=작성일 </span>)(.|\\n)*?(?=</li>)", matchstr);
-			item.put("name", strName);
+			item.put("date", strDate);
 
 			// 조회수
 			String strHit = Utils.getMatcherFirstString("(?<=조회 </span>)(.|\\n)*?(?=</li>)", matchstr);
